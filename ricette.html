@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#7A3325">
+<title>Ricette</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html, body { height:100%; }
+  body {
+    font-family: -apple-system, 'Inter', 'Segoe UI', sans-serif;
+    background:#F7F4EF; color:#221E1A;
+    max-width:520px; margin:0 auto;
+    padding-bottom:calc(84px + env(safe-area-inset-bottom));
+  }
+  .tnum { font-variant-numeric: tabular-nums; }
+
+  header {
+    background:#7A3325; color:#FBF7F1;
+    padding: calc(20px + env(safe-area-inset-top)) 18px 16px;
+    border-radius:0 0 22px 22px;
+    position:sticky; top:0; z-index:20;
+  }
+  header h1 { font-size:20px; font-weight:700; letter-spacing:.3px; }
+  header .sub { font-size:12px; opacity:.75; margin-top:2px; }
+
+  .searchwrap { margin-top:12px; display:flex; gap:8px; }
+  .searchwrap input {
+    flex:1; border:none; border-radius:12px; padding:11px 14px;
+    font-size:16px; outline:none; background:rgba(255,255,255,.95); font-family:inherit; color:#221E1A;
+  }
+  .addbtn {
+    background:rgba(255,255,255,.16); color:#fff; border:none; border-radius:12px;
+    width:44px; font-size:24px; font-weight:400; flex-shrink:0;
+  }
+
+  .tagrow {
+    display:flex; gap:7px; overflow-x:auto; padding:12px 18px 4px;
+    -webkit-overflow-scrolling:touch; scrollbar-width:none;
+  }
+  .tagrow::-webkit-scrollbar { display:none; }
+  .tagchip {
+    border:1.5px solid #E2DAD0; background:#fff; border-radius:99px;
+    padding:6px 13px; font-size:13px; font-weight:500; white-space:nowrap;
+    color:#6B5D50; font-family:inherit; flex-shrink:0;
+  }
+  .tagchip.on { background:#7A3325; border-color:#7A3325; color:#fff; }
+
+  .rlist { padding:6px 14px 0; }
+  .rcard {
+    background:#fff; border-radius:15px; padding:13px 14px; margin-bottom:9px;
+    box-shadow:0 1px 3px rgba(60,35,20,.06);
+    display:flex; align-items:center; gap:11px;
+  }
+  .rcard .remo { font-size:24px; flex-shrink:0; }
+  .rcard .rmid { flex:1; min-width:0; }
+  .rcard .rtitle { font-size:15px; font-weight:600; line-height:1.25; }
+  .rcard .rtags { font-size:11.5px; color:#8C7B6B; margin-top:3px; }
+  .rcard .rowner { font-size:10px; background:#F0E7DC; color:#7A3325; border-radius:99px; padding:1px 7px; margin-left:5px; vertical-align:1px; }
+  .selbtn {
+    width:32px; height:32px; border-radius:99px; border:2px solid #D8CEC2;
+    background:#fff; color:transparent; font-size:17px; line-height:1; flex-shrink:0;
+  }
+  .selbtn.on { background:#2E6E4E; border-color:#2E6E4E; color:#fff; }
+  .delmine { background:none; border:none; color:#C4B7A8; font-size:19px; padding:4px; flex-shrink:0; }
+  .nores { text-align:center; color:#8C7B6B; padding:36px 20px; font-size:14px; line-height:1.5; }
+
+  /* ---- Lista spesa ---- */
+  .spesa { padding:14px 14px 0; }
+  .scard { background:#fff; border-radius:15px; padding:8px 14px; box-shadow:0 1px 3px rgba(60,35,20,.06); }
+  .sitem { display:flex; align-items:center; gap:11px; padding:11px 0; border-bottom:1px solid #F2EDE6; }
+  .sitem:last-child { border-bottom:none; }
+  .tick {
+    width:26px; height:26px; border-radius:8px; border:2px solid #D8CEC2;
+    background:#fff; color:transparent; font-size:15px; flex-shrink:0;
+  }
+  .tick.on { background:#2E6E4E; border-color:#2E6E4E; color:#fff; }
+  .sitem .smid { flex:1; min-width:0; }
+  .sitem .sname { font-size:15px; font-weight:500; }
+  .sitem .ssrc { font-size:11.5px; color:#8C7B6B; margin-top:2px; }
+  .sitem.done .sname { text-decoration:line-through; color:#A99C8D; }
+  .sitem.done .ssrc { color:#C4B7A8; }
+  .sqty { font-size:14px; font-weight:600; color:#7A3325; white-space:nowrap; }
+  .sitem.done .sqty { color:#C4B7A8; text-decoration:line-through; }
+  .shead { font-size:11px; font-weight:700; letter-spacing:1.1px; text-transform:uppercase; color:#8C7B6B; margin:16px 4px 8px; }
+  .clearrow { text-align:center; margin-top:14px; }
+  .clearrow button { background:none; border:none; color:#8C7B6B; font-size:13px; padding:8px; font-family:inherit; text-decoration:underline; }
+
+  /* ---- Cucina ---- */
+  .cucina { padding:14px 14px 0; }
+  .ccard { background:#fff; border-radius:16px; margin-bottom:12px; box-shadow:0 1px 3px rgba(60,35,20,.06); overflow:hidden; }
+  .chead {
+    width:100%; display:flex; align-items:center; gap:10px; padding:15px 14px;
+    background:none; border:none; text-align:left; font-family:inherit;
+  }
+  .chead .cemo { font-size:23px; }
+  .chead .ctitle { flex:1; font-size:16.5px; font-weight:700; color:#221E1A; line-height:1.25; }
+  .chead .carrow { font-size:14px; color:#B5A795; transition:transform .2s; }
+  .ccard.closed .carrow { transform:rotate(-90deg); }
+  .cbody { padding:0 16px 16px; }
+  .ccard.closed .cbody { display:none; }
+  .servrow { display:flex; align-items:center; gap:12px; margin-bottom:12px; }
+  .servrow .slab { font-size:13px; color:#6B5D50; }
+  .stepper { display:flex; align-items:center; gap:0; border:1.5px solid #E2DAD0; border-radius:99px; overflow:hidden; }
+  .stepper button { width:36px; height:32px; border:none; background:#F7F4EF; font-size:17px; color:#7A3325; font-family:inherit; }
+  .stepper span { min-width:34px; text-align:center; font-weight:700; font-size:15px; }
+  .cing { margin-bottom:14px; }
+  .cing li { list-style:none; display:flex; justify-content:space-between; gap:10px; padding:6px 0; border-bottom:1px dashed #EFE8DF; font-size:14.5px; }
+  .cing li b { color:#7A3325; font-weight:600; white-space:nowrap; }
+  .csteps { counter-reset:step; }
+  .csteps li { list-style:none; display:flex; gap:11px; padding:8px 0; font-size:14.5px; line-height:1.5; }
+  .csteps li::before {
+    counter-increment:step; content:counter(step);
+    width:24px; height:24px; border-radius:99px; background:#F0E7DC; color:#7A3325;
+    font-weight:700; font-size:13px; display:flex; align-items:center; justify-content:center; flex-shrink:0; margin-top:1px;
+  }
+  .cremove { background:none; border:none; color:#B55040; font-size:13px; padding:8px 0 0; font-family:inherit; text-decoration:underline; }
+  .cempty { text-align:center; color:#8C7B6B; padding:40px 24px; font-size:14px; line-height:1.6; }
+
+  /* ---- Nav bar ---- */
+  nav {
+    position:fixed; bottom:0; left:0; right:0; max-width:520px; margin:0 auto;
+    background:#fff; border-top:1px solid #EAE2D8;
+    display:flex; z-index:30;
+    padding-bottom:env(safe-area-inset-bottom);
+    box-shadow:0 -4px 16px rgba(60,35,20,.07);
+  }
+  nav button {
+    flex:1; background:none; border:none; padding:9px 0 7px;
+    font-size:11px; font-weight:600; color:#A99C8D; font-family:inherit;
+    display:flex; flex-direction:column; align-items:center; gap:2px; position:relative;
+  }
+  nav button .nemo { font-size:22px; filter:grayscale(1) opacity(.55); }
+  nav button.on { color:#7A3325; }
+  nav button.on .nemo { filter:none; }
+  nav .badge {
+    position:absolute; top:4px; left:calc(50% + 10px);
+    background:#B55040; color:#fff; font-size:10px; font-weight:700;
+    border-radius:99px; min-width:17px; height:17px; padding:0 4px;
+    display:flex; align-items:center; justify-content:center;
+  }
+
+  /* ---- Sheet nuova ricetta ---- */
+  .overlay {
+    position:fixed; inset:0; background:rgba(35,20,12,.5); z-index:60;
+    display:none; align-items:flex-end; justify-content:center;
+  }
+  .overlay.open { display:flex; }
+  .sheet {
+    background:#fff; width:100%; max-width:520px;
+    border-radius:20px 20px 0 0; padding:20px 16px calc(20px + env(safe-area-inset-bottom));
+    max-height:88vh; overflow-y:auto;
+  }
+  .sheet h3 { font-size:17px; margin-bottom:14px; }
+  .sheet label { display:block; font-size:12px; font-weight:700; letter-spacing:.8px; text-transform:uppercase; color:#8C7B6B; margin:14px 0 6px; }
+  .sheet input[type=text], .sheet textarea, .sheet select {
+    width:100%; border:1.5px solid #E2DAD0; border-radius:12px; padding:11px 12px;
+    font-size:16px; outline:none; background:#FBF9F6; font-family:inherit;
+  }
+  .sheet textarea { min-height:110px; resize:vertical; line-height:1.5; }
+  .ftagrow { display:flex; flex-wrap:wrap; gap:7px; }
+  .ingrow { display:flex; gap:6px; margin-bottom:6px; }
+  .ingrow input:nth-child(1) { flex:2.2; min-width:0; }
+  .ingrow input:nth-child(2) { flex:1; min-width:0; text-align:right; }
+  .ingrow select { flex:1.3; min-width:0; padding:11px 6px; }
+  .ingrow .rmv { background:none; border:none; color:#C4B7A8; font-size:18px; padding:0 2px; }
+  .addingrow { background:#F0E7DC; color:#7A3325; border:none; border-radius:10px; padding:9px 14px; font-size:13px; font-weight:600; font-family:inherit; margin-top:2px; }
+  .savebtn {
+    width:100%; background:#7A3325; color:#fff; border:none; border-radius:13px;
+    padding:14px; font-size:16px; font-weight:700; font-family:inherit; margin-top:18px;
+  }
+  .cancelbtn { display:block; width:100%; margin-top:10px; background:none; border:none; color:#8C7B6B; font-size:14px; padding:8px; font-family:inherit; }
+
+  .toast {
+    position:fixed; left:50%; transform:translateX(-50%);
+    bottom:calc(94px + env(safe-area-inset-bottom));
+    background:#2A2320; color:#fff; font-size:14px;
+    padding:11px 18px; border-radius:99px; z-index:70;
+    box-shadow:0 4px 14px rgba(0,0,0,.25); white-space:nowrap;
+    opacity:0; pointer-events:none; transition:opacity .25s;
+  }
+  .toast.show { opacity:1; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1 id="hTitle">Ricette</h1>
+  <div class="sub" id="hSub"></div>
+  <div class="searchwrap" id="searchwrap">
+    <input id="search" placeholder="Cerca ricette o ingredienti…" autocomplete="off">
+    <button class="addbtn" id="openAdd" aria-label="Aggiungi ricetta">+</button>
+  </div>
+</header>
+
+<div class="tagrow" id="tagrow"></div>
+
+<!-- SEZIONE 1: RICETTE -->
+<div id="secRicette">
+  <div class="rlist" id="rlist"></div>
+</div>
+
+<!-- SEZIONE 2: SPESA -->
+<div id="secSpesa" style="display:none">
+  <div class="spesa" id="spesaBody"></div>
+</div>
+
+<!-- SEZIONE 3: CUCINA -->
+<div id="secCucina" style="display:none">
+  <div class="cucina" id="cucinaBody"></div>
+</div>
+
+<nav>
+  <button id="navRicette" class="on"><span class="nemo">📖</span>Ricette</button>
+  <button id="navSpesa"><span class="nemo">🛒</span>Spesa<span class="badge" id="badge" style="display:none"></span></button>
+  <button id="navCucina"><span class="nemo">👨‍🍳</span>Cucina</button>
+</nav>
+
+<!-- Sheet nuova ricetta -->
+<div class="overlay" id="addOverlay">
+  <div class="sheet">
+    <h3>Nuova ricetta</h3>
+    <label>Titolo</label>
+    <input type="text" id="fTitle" placeholder="Es. Pasta al tonno della nonna" autocomplete="off">
+    <label>Tags</label>
+    <div class="ftagrow" id="fTags"></div>
+    <label>Ingredienti (dosi per 4 persone)</label>
+    <div id="fIngs"></div>
+    <button class="addingrow" id="fAddIng">+ Aggiungi ingrediente</button>
+    <label>Preparazione (un passaggio per riga)</label>
+    <textarea id="fSteps" placeholder="Fai bollire l'acqua…&#10;Scola la pasta…"></textarea>
+    <button class="savebtn" id="fSave">Salva ricetta</button>
+    <button class="cancelbtn" id="fCancel">Annulla</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// Database ricette — dosi per 4 persone. [nome, quantità, unità] — quantità 0 = q.b.
+const RICETTE = [
+// ================= PRIMI =================
+{i:'r01',t:'Spaghetti aglio, olio e peperoncino',g:['primo','salato','veloce','vegano','vegetariano'],
+n:[['spaghetti',360,'g'],['aglio',3,'spicchi'],['olio extravergine',60,'ml'],['peperoncino fresco',1,'pz'],['prezzemolo',0,'qb'],['sale',0,'qb']],
+s:['Porta a bollore abbondante acqua salata e cala gli spaghetti.','In una padella ampia scalda l\'olio a fuoco dolce con l\'aglio a fettine e il peperoncino: deve dorare senza bruciare.','Scola la pasta al dente tenendo un mestolo di acqua di cottura.','Salta gli spaghetti in padella con un po\' di acqua per mantecare, spolvera di prezzemolo tritato e servi.']},
+{i:'r02',t:'Spaghetti alla carbonara',g:['primo','salato','veloce'],
+n:[['spaghetti',360,'g'],['guanciale',150,'g'],['tuorli',4,'pz'],['pecorino romano grattugiato',100,'g'],['pepe nero',0,'qb'],['sale',0,'qb']],
+s:['Taglia il guanciale a listarelle e rosolalo in padella a fuoco medio senza grassi aggiunti, finché è croccante. Spegni.','Sbatti i tuorli con il pecorino e abbondante pepe fino a ottenere una crema.','Cuoci gli spaghetti al dente e trasferiscili nella padella del guanciale con poca acqua di cottura.','Fuori dal fuoco unisci la crema di tuorli mescolando energicamente: deve restare cremosa, non strapazzata. Servi con altro pecorino e pepe.']},
+{i:'r03',t:'Bucatini all\'amatriciana',g:['primo','salato'],
+n:[['bucatini',360,'g'],['guanciale',150,'g'],['pomodori pelati',400,'g'],['pecorino romano grattugiato',80,'g'],['vino bianco',50,'ml'],['peperoncino fresco',1,'pz'],['sale',0,'qb']],
+s:['Rosola il guanciale a listarelle con il peperoncino finché è dorato, sfuma col vino e mettilo da parte.','Nella stessa padella versa i pelati schiacciati e cuoci 15 minuti; regola di sale.','Cuoci i bucatini al dente, uniscili al sugo con il guanciale.','Manteca con il pecorino fuori dal fuoco e servi.']},
+{i:'r04',t:'Cacio e pepe',g:['primo','salato','veloce','vegetariano'],
+n:[['tonnarelli o spaghetti',360,'g'],['pecorino romano grattugiato',200,'g'],['pepe nero in grani',0,'qb'],['sale',0,'qb']],
+s:['Tosta il pepe pestato in padella a fuoco dolce, poi aggiungi un mestolo di acqua di cottura.','Cuoci la pasta molto al dente in acqua poco salata (il pecorino è sapido).','Prepara la crema: pecorino e poca acqua di cottura tiepida, mescolando fino a consistenza vellutata.','Salta la pasta nella padella del pepe, spegni, unisci la crema di pecorino mescolando velocemente e servi subito.']},
+{i:'r05',t:'Pasta al pomodoro e basilico',g:['primo','salato','veloce','vegano','vegetariano','leggero'],
+n:[['pasta corta o spaghetti',360,'g'],['passata di pomodoro',500,'g'],['aglio',1,'spicchi'],['basilico',0,'qb'],['olio extravergine',30,'ml'],['sale',0,'qb']],
+s:['Scalda l\'olio con l\'aglio schiacciato, unisci la passata, sala e cuoci 15-20 minuti a fuoco dolce.','Cuoci la pasta al dente e scolala nel sugo.','Salta un minuto, spegni e profuma con abbondante basilico spezzettato a mano.']},
+{i:'r06',t:'Trofie al pesto alla genovese',g:['primo','salato','vegetariano'],
+n:[['trofie',360,'g'],['basilico',50,'g'],['pinoli',30,'g'],['parmigiano grattugiato',60,'g'],['pecorino romano grattugiato',20,'g'],['aglio',1,'spicchi'],['olio extravergine',80,'ml'],['sale grosso',0,'qb']],
+s:['Frulla (o pesta) basilico, pinoli, aglio, formaggi e sale grosso versando l\'olio a filo, fino a crema. Non scaldare troppo il composto.','Cuoci le trofie al dente; volendo aggiungi in pentola patate a cubetti e fagiolini.','Diluisci il pesto con un cucchiaio di acqua di cottura e condisci la pasta fuori dal fuoco.']},
+{i:'r07',t:'Lasagne alla bolognese',g:['primo','salato','invernale'],
+n:[['sfoglie per lasagne',250,'g'],['macinato di manzo',400,'g'],['passata di pomodoro',400,'g'],['besciamella',500,'ml'],['parmigiano grattugiato',100,'g'],['cipolla',1,'pz'],['carota',1,'pz'],['sedano',1,'pz'],['vino rosso',100,'ml'],['olio extravergine',30,'ml'],['sale',0,'qb']],
+s:['Prepara il ragù: soffriggi il trito di cipolla, carota e sedano, rosola il macinato, sfuma col vino, unisci la passata e cuoci almeno 1 ora a fuoco basso.','In una pirofila alterna strati di sfoglia, ragù, besciamella e parmigiano; termina con besciamella e parmigiano.','Cuoci in forno a 180°C per 30-35 minuti finché la superficie è dorata. Lascia riposare 10 minuti prima di tagliare.']},
+{i:'r08',t:'Tagliatelle al ragù',g:['primo','salato','invernale'],
+n:[['tagliatelle all\'uovo',400,'g'],['macinato misto (manzo e maiale)',400,'g'],['passata di pomodoro',400,'g'],['cipolla',1,'pz'],['carota',1,'pz'],['sedano',1,'pz'],['vino rosso',100,'ml'],['latte',50,'ml'],['olio extravergine',30,'ml'],['parmigiano grattugiato',60,'g'],['sale',0,'qb']],
+s:['Soffriggi il trito di verdure nell\'olio, unisci il macinato e rosolalo bene.','Sfuma col vino, aggiungi la passata e cuoci coperto a fuoco minimo 1-2 ore; a fine cottura ammorbidisci col latte e regola di sale.','Cuoci le tagliatelle, condiscile col ragù e servi con parmigiano.']},
+{i:'r09',t:'Pasta e fagioli',g:['primo','salato','invernale'],
+n:[['ditalini rigati',280,'g'],['fagioli borlotti lessati',400,'g'],['passata di pomodoro',200,'g'],['cipolla',1,'pz'],['carota',1,'pz'],['sedano',1,'pz'],['rosmarino',1,'rametti'],['olio extravergine',40,'ml'],['sale',0,'qb'],['pepe nero',0,'qb']],
+s:['Soffriggi il trito di cipolla, carota e sedano con il rosmarino.','Unisci i fagioli con la passata e un litro circa d\'acqua calda; cuoci 15 minuti, poi frulla una parte dei fagioli per dare cremosità.','Cala la pasta direttamente nella zuppa e cuocila mescolando. Servi con pepe e un giro d\'olio a crudo.']},
+{i:'r10',t:'Pasta e ceci',g:['primo','salato','invernale','vegano','vegetariano'],
+n:[['pasta mista',280,'g'],['ceci lessati',400,'g'],['aglio',2,'spicchi'],['rosmarino',1,'rametti'],['peperoncino fresco',1,'pz'],['olio extravergine',40,'ml'],['sale',0,'qb']],
+s:['Scalda l\'olio con aglio, rosmarino e peperoncino; unisci i ceci e insaporisci qualche minuto.','Aggiungi un litro d\'acqua calda, sala, e frulla metà dei ceci per la crema.','Cuoci la pasta nella zuppa mescolando spesso. Servi con olio a crudo.']},
+{i:'r11',t:'Risotto alla milanese',g:['primo','salato','invernale','vegetariano'],
+n:[['riso carnaroli',320,'g'],['zafferano',1,'pz'],['burro',60,'g'],['cipolla',0.5,'pz'],['parmigiano grattugiato',60,'g'],['brodo vegetale',1.2,'l'],['vino bianco',50,'ml'],['sale',0,'qb']],
+s:['Appassisci la cipolla tritata in metà burro; tosta il riso 2 minuti e sfuma col vino.','Cuoci aggiungendo brodo caldo un mestolo alla volta; a metà cottura sciogli lo zafferano in un mestolo di brodo e uniscilo.','A cottura (16-18 minuti) spegni e manteca con burro restante e parmigiano. Riposo di 2 minuti e servi all\'onda.']},
+{i:'r12',t:'Risotto ai funghi porcini',g:['primo','salato','invernale'],
+n:[['riso carnaroli',320,'g'],['funghi porcini',300,'g'],['brodo vegetale',1.2,'l'],['cipolla',0.5,'pz'],['burro',50,'g'],['parmigiano grattugiato',50,'g'],['vino bianco',50,'ml'],['prezzemolo',0,'qb'],['sale',0,'qb']],
+s:['Trifola i porcini a fette con poco burro e mettili da parte.','Appassisci la cipolla, tosta il riso, sfuma col vino e porta a cottura col brodo caldo, mestolo dopo mestolo.','A tre quarti di cottura unisci i funghi. Manteca con burro e parmigiano, completa col prezzemolo.']},
+{i:'r13',t:'Gnocchi al pomodoro',g:['primo','salato','veloce','vegetariano'],
+n:[['gnocchi di patate',800,'g'],['passata di pomodoro',400,'g'],['aglio',1,'spicchi'],['basilico',0,'qb'],['parmigiano grattugiato',60,'g'],['olio extravergine',30,'ml'],['sale',0,'qb']],
+s:['Prepara un sugo semplice: olio, aglio, passata, sale, 15 minuti di cottura.','Lessa gli gnocchi in acqua salata e scolali appena vengono a galla.','Condisci col sugo, basilico e parmigiano.']},
+{i:'r14',t:'Orecchiette alle cime di rapa',g:['primo','salato'],
+n:[['orecchiette',360,'g'],['cime di rapa',800,'g'],['acciughe sott\'olio',4,'pz'],['aglio',2,'spicchi'],['peperoncino fresco',1,'pz'],['olio extravergine',50,'ml'],['sale',0,'qb']],
+s:['Monda le cime di rapa e lessale nell\'acqua che userai per la pasta.','In padella sciogli le acciughe nell\'olio con aglio e peperoncino.','Cuoci le orecchiette nella stessa acqua, scola tutto insieme alle cime e salta in padella un paio di minuti.']},
+{i:'r15',t:'Pasta alla Norma',g:['primo','salato','estivo','vegetariano'],
+n:[['rigatoni',360,'g'],['melanzane',2,'pz'],['passata di pomodoro',400,'g'],['ricotta salata',80,'g'],['basilico',0,'qb'],['aglio',1,'spicchi'],['olio di semi per friggere',300,'ml'],['olio extravergine',20,'ml'],['sale',0,'qb']],
+s:['Taglia le melanzane a cubetti o fette e friggile in olio di semi ben caldo; scolale su carta assorbente e sala.','Prepara il sugo con olio extravergine, aglio e passata, 15 minuti.','Condisci la pasta con sugo, melanzane e basilico; completa con ricotta salata grattugiata.']},
+{i:'r16',t:'Spaghetti alle vongole',g:['primo','salato','estivo'],
+n:[['spaghetti',360,'g'],['vongole',1000,'g'],['aglio',2,'spicchi'],['prezzemolo',0,'qb'],['vino bianco',50,'ml'],['olio extravergine',50,'ml'],['peperoncino fresco',1,'pz'],['sale',0,'qb']],
+s:['Spurga le vongole in acqua salata per almeno 2 ore, cambiando l\'acqua.','Aprile in padella a fuoco vivo con olio, aglio e peperoncino, sfumando col vino; filtra e conserva il liquido.','Cuoci gli spaghetti molto al dente e finisci la cottura in padella con il liquido delle vongole.','Unisci le vongole e il prezzemolo, un giro d\'olio a crudo e servi.']},
+{i:'r17',t:'Minestrone di verdure',g:['primo','salato','invernale','vegano','vegetariano','leggero'],
+n:[['zucchine',2,'pz'],['carota',2,'pz'],['patate',2,'pz'],['fagioli borlotti lessati',200,'g'],['sedano',2,'pz'],['cipolla',1,'pz'],['passata di pomodoro',200,'g'],['brodo vegetale',1.5,'l'],['olio extravergine',40,'ml'],['sale',0,'qb'],['parmigiano grattugiato',40,'g']],
+s:['Taglia tutte le verdure a dadini e falle insaporire nell\'olio con la cipolla per 5 minuti.','Unisci passata, brodo e sale; cuoci coperto 40 minuti a fuoco dolce.','Aggiungi i fagioli negli ultimi 10 minuti. Servi con parmigiano (omettilo per la versione vegana) e olio a crudo.']},
+{i:'r18',t:'Zuppa di lenticchie',g:['primo','salato','invernale','vegano','vegetariano','leggero'],
+n:[['lenticchie secche',300,'g'],['cipolla',1,'pz'],['carota',1,'pz'],['sedano',1,'pz'],['passata di pomodoro',150,'g'],['brodo vegetale',1,'l'],['alloro',2,'foglie'],['olio extravergine',40,'ml'],['sale',0,'qb']],
+s:['Soffriggi il trito di verdure nell\'olio.','Unisci le lenticchie sciacquate, la passata, il brodo e l\'alloro; cuoci 30-40 minuti finché sono tenere.','Regola di sale solo alla fine e servi con un giro d\'olio.']},
+{i:'r19',t:'Pasta fredda estiva',g:['primo','salato','estivo','veloce','vegetariano'],
+n:[['fusilli',360,'g'],['pomodorini',300,'g'],['mozzarelline',200,'g'],['olive nere',80,'g'],['basilico',0,'qb'],['origano',0,'qb'],['olio extravergine',50,'ml'],['sale',0,'qb']],
+s:['Cuoci i fusilli al dente, scolali e raffreddali sotto acqua fredda; condiscili con un filo d\'olio.','Unisci pomodorini a metà, mozzarelline, olive, basilico e origano.','Condisci con olio e sale, lascia insaporire in frigo 30 minuti.']},
+{i:'r20',t:'Risotto agli asparagi',g:['primo','salato','vegetariano'],
+n:[['riso carnaroli',320,'g'],['asparagi',400,'g'],['cipolla',0.5,'pz'],['burro',50,'g'],['parmigiano grattugiato',50,'g'],['brodo vegetale',1.2,'l'],['vino bianco',50,'ml'],['sale',0,'qb']],
+s:['Pulisci gli asparagi, lessa i gambi nel brodo e tienili da parte; salta le punte con poco burro.','Appassisci la cipolla, tosta il riso, sfuma col vino e porta a cottura col brodo.','A metà cottura unisci i gambi a rondelle; alla fine le punte. Manteca con burro e parmigiano.']},
+// ================= SECONDI =================
+{i:'r21',t:'Pollo al limone',g:['secondo','salato','veloce','leggero'],
+n:[['petto di pollo',600,'g'],['limone',2,'pz'],['farina 00',30,'g'],['burro',40,'g'],['brodo vegetale',100,'ml'],['prezzemolo',0,'qb'],['sale',0,'qb'],['pepe nero',0,'qb']],
+s:['Taglia il petto a fettine, infarinale leggermente.','Rosolale nel burro 2 minuti per lato; sfuma con il succo di limone e il brodo.','Cuoci finché la salsa si addensa, regola di sale e pepe, completa con prezzemolo e scorza di limone.']},
+{i:'r22',t:'Pollo alla cacciatora',g:['secondo','salato','invernale'],
+n:[['pollo a pezzi',1000,'g'],['passata di pomodoro',300,'g'],['olive nere',80,'g'],['cipolla',1,'pz'],['carota',1,'pz'],['sedano',1,'pz'],['vino rosso',100,'ml'],['rosmarino',1,'rametti'],['olio extravergine',40,'ml'],['sale',0,'qb']],
+s:['Rosola i pezzi di pollo nell\'olio finché sono dorati; toglili dalla padella.','Nella stessa padella soffriggi il trito di verdure, rimetti il pollo e sfuma col vino.','Unisci passata, olive e rosmarino; cuoci coperto 40 minuti a fuoco dolce, girando ogni tanto.']},
+{i:'r23',t:'Cotoletta alla milanese',g:['secondo','salato'],
+n:[['fettine di lombata di vitello con osso',4,'pz'],['uova',2,'pz'],['pangrattato',150,'g'],['burro chiarificato',100,'g'],['limone',1,'pz'],['sale',0,'qb']],
+s:['Sbatti le uova; passa le fettine prima nell\'uovo poi nel pangrattato premendo bene.','Friggi nel burro chiarificato a fuoco medio, 3-4 minuti per lato, finché dorate.','Scola su carta assorbente, sala e servi con spicchi di limone.']},
+{i:'r24',t:'Scaloppine al limone',g:['secondo','salato','veloce'],
+n:[['fettine di vitello',500,'g'],['farina 00',40,'g'],['burro',50,'g'],['limone',1,'pz'],['brodo vegetale',80,'ml'],['prezzemolo',0,'qb'],['sale',0,'qb']],
+s:['Infarina le fettine e rosolale nel burro un minuto per lato.','Sfuma con succo di limone e brodo; cuoci finché la salsa vela il cucchiaio.','Sala, completa con prezzemolo e servi subito.']},
+{i:'r25',t:'Polpette al sugo',g:['secondo','salato'],
+n:[['macinato di manzo',500,'g'],['pane raffermo',80,'g'],['latte',100,'ml'],['uova',1,'pz'],['parmigiano grattugiato',50,'g'],['passata di pomodoro',500,'g'],['aglio',1,'spicchi'],['basilico',0,'qb'],['olio extravergine',40,'ml'],['sale',0,'qb']],
+s:['Ammolla il pane nel latte, strizzalo e impastalo con carne, uovo, parmigiano e sale. Forma polpette da 40 g circa.','Rosolale nell\'olio su tutti i lati.','Prepara il sugo con aglio e passata nella stessa padella, tuffa le polpette e cuoci coperto 20 minuti. Basilico alla fine.']},
+{i:'r26',t:'Spezzatino con patate',g:['secondo','salato','invernale'],
+n:[['manzo per spezzatino',800,'g'],['patate',600,'g'],['cipolla',1,'pz'],['carota',1,'pz'],['sedano',1,'pz'],['vino rosso',100,'ml'],['brodo vegetale',500,'ml'],['concentrato di pomodoro',1,'cucchiai'],['rosmarino',1,'rametti'],['farina 00',30,'g'],['olio extravergine',40,'ml'],['sale',0,'qb']],
+s:['Infarina la carne e rosolala bene nell\'olio; togli e metti da parte.','Soffriggi il trito di verdure, rimetti la carne, sfuma col vino, unisci concentrato, brodo e rosmarino.','Cuoci coperto a fuoco minimo 1 ora e mezza; unisci le patate a tocchi nell\'ultima mezz\'ora. Regola di sale.']},
+{i:'r27',t:'Arrosto di maiale al latte',g:['secondo','salato','invernale'],
+n:[['lonza di maiale',800,'g'],['latte',500,'ml'],['burro',30,'g'],['salvia',4,'foglie'],['rosmarino',1,'rametti'],['aglio',2,'spicchi'],['vino bianco',100,'ml'],['olio extravergine',20,'ml'],['sale',0,'qb']],
+s:['Rosola la lonza legata su tutti i lati in olio e burro con aglio ed erbe.','Sfuma col vino, poi copri a filo col latte; cuoci coperto a fuoco dolce 1 ora, girando a metà.','Togli la carne, riduci il fondo (frullalo se serve) e servi l\'arrosto a fette con la sua crema.']},
+{i:'r28',t:'Orata al forno con patate',g:['secondo','salato','leggero'],
+n:[['orata',2,'pz'],['patate',500,'g'],['pomodorini',150,'g'],['olive nere',60,'g'],['aglio',2,'spicchi'],['vino bianco',50,'ml'],['prezzemolo',0,'qb'],['olio extravergine',50,'ml'],['sale',0,'qb']],
+s:['Affetta le patate sottili e disponile in teglia oliata; inforna 15 minuti a 200°C.','Adagia sopra le orate pulite con pomodorini, olive, aglio e prezzemolo nel ventre; sala e sfuma col vino.','Inforna altri 25 minuti circa. Sfiletta e servi con il fondo di cottura.']},
+{i:'r29',t:'Salmone al forno con patate',g:['secondo','salato','veloce','leggero'],
+n:[['filetti di salmone',600,'g'],['patate',500,'g'],['limone',1,'pz'],['rosmarino',1,'rametti'],['olio extravergine',40,'ml'],['sale',0,'qb'],['pepe nero',0,'qb']],
+s:['Lessa o inforna le patate a fette per 20 minuti a 200°C con olio e rosmarino.','Adagia i filetti sulle patate, condisci con olio, sale, pepe e fette di limone.','Cuoci altri 12-15 minuti: il salmone deve restare morbido al centro.']},
+{i:'r30',t:'Polpo con patate',g:['secondo','salato','estivo','leggero'],
+n:[['polpo',1000,'g'],['patate',500,'g'],['prezzemolo',0,'qb'],['limone',1,'pz'],['olio extravergine',60,'ml'],['aglio',1,'spicchi'],['sale',0,'qb'],['pepe nero',0,'qb']],
+s:['Immergi il polpo in acqua bollente non salata e cuoci 40-50 minuti; lascialo intiepidire nella sua acqua.','Lessa le patate a parte e tagliale a tocchi.','Taglia il polpo, unisci le patate e condisci con olio, limone, aglio tritato fine, prezzemolo, sale e pepe. Meglio tiepido.']},
+{i:'r31',t:'Frittata di zucchine',g:['secondo','salato','veloce','vegetariano'],
+n:[['uova',6,'pz'],['zucchine',2,'pz'],['parmigiano grattugiato',50,'g'],['cipolla',0.5,'pz'],['olio extravergine',30,'ml'],['sale',0,'qb'],['pepe nero',0,'qb']],
+s:['Rosola le zucchine a rondelle con la cipolla nell\'olio finché sono morbide.','Sbatti le uova con parmigiano, sale e pepe; versale sulle zucchine.','Cuoci a fuoco dolce coperto 6-7 minuti, poi gira la frittata con un piatto e completa 3-4 minuti.']},
+{i:'r32',t:'Parmigiana di melanzane',g:['secondo','salato','estivo','vegetariano'],
+n:[['melanzane',3,'pz'],['passata di pomodoro',700,'g'],['mozzarella',300,'g'],['parmigiano grattugiato',100,'g'],['basilico',0,'qb'],['olio di semi per friggere',500,'ml'],['aglio',1,'spicchi'],['olio extravergine',20,'ml'],['sale',0,'qb']],
+s:['Affetta le melanzane, friggile in olio di semi e scolale su carta assorbente.','Prepara un sugo con olio extravergine, aglio e passata, 15 minuti.','Componi in pirofila strati di melanzane, sugo, mozzarella a cubetti, parmigiano e basilico; ripeti e termina con sugo e parmigiano.','Inforna a 180°C per 30 minuti. Riposa 15 minuti prima di servire.']},
+{i:'r33',t:'Melanzane ripiene',g:['secondo','salato','estivo'],
+n:[['melanzane',2,'pz'],['macinato di manzo',300,'g'],['passata di pomodoro',200,'g'],['parmigiano grattugiato',60,'g'],['pangrattato',40,'g'],['uova',1,'pz'],['aglio',1,'spicchi'],['olio extravergine',30,'ml'],['sale',0,'qb']],
+s:['Taglia le melanzane a metà, svuotale e trita la polpa; sbollenta i gusci 5 minuti.','Rosola la polpa con aglio e macinato; fuori dal fuoco unisci uovo, parmigiano, pangrattato e sale.','Farcisci i gusci, copri con passata e una spolverata di parmigiano; inforna a 180°C per 30 minuti.']},
+{i:'r34',t:'Polpette di ceci al forno',g:['secondo','salato','vegano','vegetariano','leggero'],
+n:[['ceci lessati',400,'g'],['pangrattato',80,'g'],['prezzemolo',0,'qb'],['aglio',1,'spicchi'],['cumino',1,'cucchiaini'],['olio extravergine',30,'ml'],['sale',0,'qb']],
+s:['Frulla i ceci con aglio, prezzemolo, cumino, sale e metà del pangrattato.','Forma polpette, passale nel pangrattato restante e disponile su teglia oliata.','Inforna a 200°C per 20-25 minuti girandole a metà, finché dorate.']},
+{i:'r35',t:'Uova in purgatorio',g:['secondo','salato','veloce','vegetariano'],
+n:[['uova',4,'pz'],['passata di pomodoro',400,'g'],['aglio',1,'spicchi'],['peperoncino fresco',1,'pz'],['olio extravergine',30,'ml'],['pane casereccio',4,'pz'],['sale',0,'qb']],
+s:['Prepara in padella un sugo con olio, aglio, peperoncino e passata; cuoci 10 minuti.','Crea quattro conche nel sugo e rompici dentro le uova; sala.','Cuoci coperto 5-6 minuti: l\'albume deve rapprendersi, il tuorlo restare morbido. Servi con pane abbrustolito.']},
+{i:'r36',t:'Burger di lenticchie',g:['secondo','salato','vegano','vegetariano'],
+n:[['lenticchie lessate',300,'g'],['pangrattato',80,'g'],['carota',1,'pz'],['cipolla',0.5,'pz'],['cumino',1,'cucchiaini'],['olio extravergine',30,'ml'],['sale',0,'qb']],
+s:['Frulla grossolanamente le lenticchie con carota e cipolla tritate, cumino e sale.','Unisci il pangrattato fino a impasto modellabile e forma 4 burger.','Cuoci in padella con olio 4-5 minuti per lato, finché fuori sono croccanti.']},
+// ================= CONTORNI E ANTIPASTI =================
+{i:'r37',t:'Patate al forno',g:['contorno','salato','vegano','vegetariano'],
+n:[['patate',1000,'g'],['rosmarino',2,'rametti'],['aglio',2,'spicchi'],['olio extravergine',50,'ml'],['sale',0,'qb']],
+s:['Taglia le patate a tocchetti regolari e sciacquale dall\'amido; asciugale bene.','Condiscile con olio, sale, rosmarino e aglio in camicia.','Inforna a 200°C per 40-45 minuti girando una volta, finché dorate e croccanti.']},
+{i:'r38',t:'Purè di patate',g:['contorno','salato','invernale','vegetariano'],
+n:[['patate',800,'g'],['latte',200,'ml'],['burro',60,'g'],['parmigiano grattugiato',40,'g'],['noce moscata',0,'qb'],['sale',0,'qb']],
+s:['Lessa le patate con la buccia partendo da acqua fredda; pelale e schiacciale ancora calde.','Rimettile in pentola con burro e latte caldo, mescolando a fuoco dolce.','Manteca con parmigiano, sala e profuma di noce moscata.']},
+{i:'r39',t:'Verdure grigliate',g:['contorno','salato','estivo','vegano','vegetariano','leggero'],
+n:[['zucchine',2,'pz'],['melanzane',1,'pz'],['peperoni',2,'pz'],['olio extravergine',50,'ml'],['aglio',1,'spicchi'],['prezzemolo',0,'qb'],['aceto balsamico',20,'ml'],['sale',0,'qb']],
+s:['Affetta le verdure e grigliale su piastra ben calda finché segnate e morbide.','Disponile a strati condendo con olio, sale, aglio a fettine e prezzemolo.','Completa con poco aceto balsamico e lascia insaporire almeno 30 minuti.']},
+{i:'r40',t:'Caponata siciliana',g:['contorno','salato','estivo','vegano','vegetariano'],
+n:[['melanzane',2,'pz'],['sedano',2,'pz'],['cipolla',1,'pz'],['olive verdi',80,'g'],['capperi',20,'g'],['passata di pomodoro',150,'g'],['aceto di vino',40,'ml'],['zucchero',1,'cucchiai'],['olio di semi per friggere',300,'ml'],['olio extravergine',20,'ml'],['sale',0,'qb']],
+s:['Friggi le melanzane a cubetti e scolale.','Soffriggi cipolla e sedano nell\'olio extravergine, unisci passata, olive e capperi; cuoci 10 minuti.','Aggiungi le melanzane, sfuma con aceto e zucchero (agrodolce), spegni dopo 2 minuti. Va servita fredda, meglio il giorno dopo.']},
+{i:'r41',t:'Peperonata',g:['contorno','salato','estivo','vegano','vegetariano'],
+n:[['peperoni',3,'pz'],['cipolla',1,'pz'],['passata di pomodoro',200,'g'],['olio extravergine',40,'ml'],['basilico',0,'qb'],['sale',0,'qb']],
+s:['Affetta i peperoni a falde e la cipolla sottile.','Appassisci la cipolla nell\'olio, unisci i peperoni e cuoci 10 minuti a fuoco vivo.','Aggiungi passata e sale, copri e cuoci 25 minuti a fuoco dolce. Basilico alla fine.']},
+{i:'r42',t:'Zucchine trifolate',g:['contorno','salato','veloce','vegano','vegetariano','leggero'],
+n:[['zucchine',4,'pz'],['aglio',2,'spicchi'],['prezzemolo',0,'qb'],['olio extravergine',40,'ml'],['sale',0,'qb']],
+s:['Taglia le zucchine a rondelle sottili.','Saltale in padella con olio e aglio a fuoco vivo, mescolando, 8-10 minuti.','Sala e completa con prezzemolo tritato.']},
+{i:'r43',t:'Spinaci saltati',g:['contorno','salato','veloce','vegano','vegetariano','leggero'],
+n:[['spinaci freschi',600,'g'],['aglio',2,'spicchi'],['olio extravergine',30,'ml'],['peperoncino fresco',1,'pz'],['sale',0,'qb']],
+s:['Lava gli spinaci e cuocili coperti con la sola acqua del lavaggio 5 minuti; scolali e strizzali.','Scalda olio, aglio e peperoncino; salta gli spinaci 3-4 minuti e sala.']},
+{i:'r44',t:'Insalata caprese',g:['antipasto','salato','estivo','veloce','vegetariano','leggero'],
+n:[['pomodori',3,'pz'],['mozzarella',250,'g'],['basilico',0,'qb'],['origano',0,'qb'],['olio extravergine',30,'ml'],['sale',0,'qb']],
+s:['Affetta pomodori e mozzarella e alternali su un piatto.','Condisci con sale, origano, basilico e un buon olio a crudo.']},
+{i:'r45',t:'Fagiolini all\'agro',g:['contorno','salato','estivo','vegano','vegetariano','leggero'],
+n:[['fagiolini',500,'g'],['limone',1,'pz'],['olio extravergine',30,'ml'],['sale',0,'qb']],
+s:['Spunta i fagiolini e lessali in acqua salata 8-10 minuti: devono restare sodi.','Raffreddali in acqua e ghiaccio per mantenere il colore.','Condisci con olio, succo di limone e sale. Buoni tiepidi o freddi.']},
+{i:'r46',t:'Insalata di farro',g:['primo','salato','estivo','vegetariano'],
+n:[['farro perlato',250,'g'],['pomodorini',200,'g'],['cetriolo',1,'pz'],['feta',100,'g'],['olive nere',60,'g'],['basilico',0,'qb'],['olio extravergine',40,'ml'],['sale',0,'qb']],
+s:['Lessa il farro in acqua salata secondo i tempi della confezione; scolalo e raffreddalo con un filo d\'olio.','Unisci pomodorini a metà, cetriolo a dadini, feta sbriciolata, olive e basilico.','Condisci e lascia riposare in frigo 30 minuti.']},
+{i:'r47',t:'Hummus di ceci',g:['antipasto','salato','veloce','vegano','vegetariano'],
+n:[['ceci lessati',400,'g'],['tahina',60,'g'],['limone',1,'pz'],['aglio',1,'spicchi'],['cumino',1,'cucchiaini'],['olio extravergine',40,'ml'],['sale',0,'qb']],
+s:['Frulla i ceci con tahina, succo di limone, aglio, cumino e sale.','Aggiungi acqua fredda poca alla volta fino a crema liscia e soffice.','Servi con un giro d\'olio e una spolverata di cumino o paprica.']},
+{i:'r48',t:'Bruschette al pomodoro',g:['antipasto','salato','veloce','estivo','vegano','vegetariano'],
+n:[['pane casereccio',8,'pz'],['pomodori',4,'pz'],['aglio',1,'spicchi'],['basilico',0,'qb'],['olio extravergine',40,'ml'],['sale',0,'qb']],
+s:['Taglia i pomodori a dadini e condiscili con olio, sale e basilico; lascia insaporire 15 minuti.','Abbrustolisci le fette di pane e strofinale con l\'aglio.','Distribuisci il pomodoro sul pane e servi subito.']},
+// ================= DOLCI =================
+{i:'r49',t:'Tiramisù',g:['dolce'],
+n:[['savoiardi',300,'g'],['mascarpone',500,'g'],['uova',4,'pz'],['zucchero',100,'g'],['caffè',300,'ml'],['cacao amaro',0,'qb']],
+s:['Monta i tuorli con lo zucchero fino a renderli chiari; incorpora il mascarpone.','Monta gli albumi a neve ferma e uniscili delicatamente al composto.','Inzuppa velocemente i savoiardi nel caffè freddo e alterna strati di biscotti e crema.','Termina con la crema, spolvera di cacao e fai riposare in frigo almeno 4 ore.']},
+{i:'r50',t:'Panna cotta',g:['dolce'],
+n:[['panna fresca',500,'ml'],['zucchero',80,'g'],['gelatina in fogli',8,'g'],['vaniglia',1,'pz'],['frutti di bosco',200,'g']],
+s:['Ammolla la gelatina in acqua fredda 10 minuti.','Scalda panna, zucchero e vaniglia senza bollire; sciogli dentro la gelatina strizzata.','Versa negli stampini e fai rapprendere in frigo almeno 5 ore.','Servi con una salsa di frutti di bosco scaldati con un cucchiaio di zucchero.']},
+{i:'r51',t:'Crostata di marmellata',g:['dolce'],
+n:[['farina 00',300,'g'],['burro',150,'g'],['zucchero',120,'g'],['uova',2,'pz'],['marmellata',350,'g'],['limone',1,'pz'],['sale',0,'qb']],
+s:['Impasta velocemente farina, burro freddo a pezzi, zucchero, uova, scorza di limone e un pizzico di sale; riposa la frolla in frigo 1 ora.','Stendi due terzi dell\'impasto in una tortiera, bucherella e farcisci con la marmellata.','Con la frolla restante forma le losanghe; inforna a 180°C per 35 minuti.']},
+{i:'r52',t:'Torta di mele',g:['dolce'],
+n:[['mele',3,'pz'],['farina 00',250,'g'],['zucchero',150,'g'],['uova',2,'pz'],['burro',100,'g'],['latte',100,'ml'],['lievito per dolci',16,'g'],['cannella',1,'cucchiaini'],['limone',1,'pz']],
+s:['Monta uova e zucchero; unisci burro fuso, latte, scorza di limone, poi farina, lievito e cannella.','Sbuccia le mele: due a dadini nell\'impasto, una a fettine per la superficie.','Versa in tortiera imburrata e inforna a 180°C per 40-45 minuti. Prova stecchino.']},
+{i:'r53',t:'Ciambellone',g:['dolce'],
+n:[['farina 00',300,'g'],['zucchero',200,'g'],['uova',3,'pz'],['latte',120,'ml'],['olio di semi',120,'ml'],['lievito per dolci',16,'g'],['limone',1,'pz'],['zucchero a velo',0,'qb']],
+s:['Monta le uova con lo zucchero finché gonfie e chiare.','Unisci olio, latte e scorza di limone, poi farina e lievito setacciati.','Versa nello stampo a ciambella imburrato e inforna a 180°C per 40 minuti. Spolvera di zucchero a velo.']},
+{i:'r54',t:'Salame di cioccolato',g:['dolce','veloce'],
+n:[['biscotti secchi',200,'g'],['cioccolato fondente',200,'g'],['burro',100,'g'],['zucchero',80,'g'],['cacao amaro',40,'g'],['latte',40,'ml']],
+s:['Sciogli cioccolato e burro a bagnomaria; unisci zucchero, cacao e latte.','Spezzetta i biscotti grossolanamente e incorporali.','Forma un salame con carta forno, chiudi a caramella e fai rassodare in frigo 4 ore. Taglia a fette.']},
+{i:'r55',t:'Torta al cioccolato',g:['dolce'],
+n:[['cioccolato fondente',200,'g'],['burro',150,'g'],['zucchero',150,'g'],['uova',4,'pz'],['farina 00',100,'g'],['lievito per dolci',8,'g'],['sale',0,'qb']],
+s:['Sciogli cioccolato e burro a bagnomaria.','Monta uova e zucchero, incorpora il cioccolato tiepido, poi farina, lievito e un pizzico di sale.','Inforna a 180°C per 30-35 minuti in tortiera imburrata: il cuore deve restare umido.']},
+{i:'r56',t:'Biscotti al burro',g:['dolce'],
+n:[['farina 00',300,'g'],['burro',200,'g'],['zucchero a velo',100,'g'],['tuorli',2,'pz'],['vaniglia',1,'pz'],['sale',0,'qb']],
+s:['Lavora il burro morbido con lo zucchero a velo; unisci tuorli, vaniglia, sale e infine la farina.','Fai riposare l\'impasto in frigo 1 ora, poi stendilo e ritaglia i biscotti.','Inforna a 170°C per 12-15 minuti: devono dorare appena ai bordi.']},
+{i:'r57',t:'Macedonia di frutta',g:['dolce','veloce','estivo','vegano','vegetariano','leggero'],
+n:[['frutta mista di stagione',800,'g'],['limone',1,'pz'],['zucchero',40,'g'],['menta',0,'qb']],
+s:['Taglia tutta la frutta a pezzetti regolari.','Condisci con succo di limone e zucchero; mescola e fai riposare in frigo 30 minuti.','Servi fredda con foglie di menta.']},
+{i:'r58',t:'Sorbetto al limone',g:['dolce','estivo','vegano','vegetariano'],
+n:[['limone',4,'pz'],['acqua',400,'ml'],['zucchero',180,'g']],
+s:['Prepara uno sciroppo scaldando acqua e zucchero finché si scioglie; fai raffreddare.','Unisci il succo dei limoni e la scorza grattugiata di uno.','Congela mescolando con una forchetta ogni 30 minuti per 3-4 ore (o usa la gelatiera).']},
+{i:'r59',t:'Pancake',g:['dolce','veloce'],
+n:[['farina 00',200,'g'],['latte',250,'ml'],['uova',2,'pz'],['zucchero',30,'g'],['burro',30,'g'],['lievito per dolci',8,'g'],['sciroppo d\'acero',0,'qb'],['sale',0,'qb']],
+s:['Mescola farina, zucchero, lievito e sale; a parte sbatti uova, latte e burro fuso.','Unisci i liquidi ai secchi senza lavorare troppo: qualche grumo va bene.','Cuoci mestolini di impasto in padella antiaderente: gira quando affiorano le bollicine. Servi con sciroppo d\'acero.']},
+{i:'r60',t:'Muffin al cioccolato',g:['dolce'],
+n:[['farina 00',250,'g'],['cacao amaro',40,'g'],['zucchero',150,'g'],['uova',2,'pz'],['latte',150,'ml'],['olio di semi',100,'ml'],['gocce di cioccolato',100,'g'],['lievito per dolci',16,'g']],
+s:['Mescola gli ingredienti secchi (farina, cacao, zucchero, lievito).','A parte sbatti uova, latte e olio; unisci ai secchi mescolando poco, poi le gocce di cioccolato.','Riempi i pirottini per due terzi e inforna a 180°C per 20-22 minuti.']},
+];
+
+
+// ============ Stato ============
+const KEY = 'ricette-data-v1';
+const TAGS = ['primo','secondo','contorno','antipasto','dolce','salato','veloce','leggero','vegetariano','vegano','estivo','invernale'];
+const UNITS = ['g','ml','pz','cucchiai','cucchiaini','spicchi','rametti','foglie','l','qb'];
+let state = { custom: [], sel: [], checked: {} };
+let storageOk = true;
+
+function load() {
+  try {
+    const raw = localStorage.getItem(KEY);
+    if (raw) {
+      const d = JSON.parse(raw);
+      state.custom = d.custom || [];
+      state.sel = d.sel || [];
+      state.checked = d.checked || {};
+    }
+  } catch (e) { storageOk = false; }
+}
+function save() {
+  try { localStorage.setItem(KEY, JSON.stringify(state)); }
+  catch (e) {
+    if (storageOk) toast('Anteprima senza salvataggio: funzionerà dal tuo indirizzo online');
+    storageOk = false;
+  }
+}
+
+// ============ Utilità ============
+let section = 'ricette';
+let query = '';
+let activeTags = new Set();
+const collapsed = new Set();
+
+function allRecipes() { return RICETTE.concat(state.custom); }
+function getRecipe(id) { return allRecipes().find(r => r.i === id); }
+function isSelected(id) { return state.sel.some(s => s.id === id); }
+function emojiFor(r) {
+  const g = r.g;
+  if (g.includes('dolce')) return '🍰';
+  if (g.includes('primo')) return '🍝';
+  if (g.includes('secondo')) return '🍗';
+  if (g.includes('contorno')) return '🥗';
+  if (g.includes('antipasto')) return '🥖';
+  return '🍽️';
+}
+function norm(s) { return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''); }
+function escapeHtml(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+function fmtQty(q, u, factor) {
+  if (u === 'qb' || q === 0) return 'q.b.';
+  let v = q * factor;
+  if (u === 'g' || u === 'ml') v = v >= 100 ? Math.round(v / 5) * 5 : Math.round(v);
+  else if (u === 'l') v = Math.round(v * 100) / 100;
+  else v = Math.round(v * 2) / 2; // pezzi, cucchiai, spicchi…
+  const num = v.toLocaleString('it-IT');
+  return u === 'pz' ? num : num + ' ' + u;
+}
+
+let toastTimer = null;
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2600);
+}
+
+// ============ Selezione ricette ============
+function toggleSelect(id) {
+  if (isSelected(id)) {
+    state.sel = state.sel.filter(s => s.id !== id);
+  } else {
+    state.sel.push({ id, serv: 4 });
+    toast('Aggiunta a Spesa e Cucina');
+  }
+  pruneChecked();
+  save();
+  render();
+}
+function changeServ(id, delta) {
+  const s = state.sel.find(x => x.id === id);
+  if (!s) return;
+  s.serv = Math.min(12, Math.max(1, s.serv + delta));
+  save();
+  render();
+}
+
+// ============ Lista spesa: aggregazione ============
+function shoppingItems() {
+  const map = new Map(); // chiave: nome|unità
+  for (const s of state.sel) {
+    const r = getRecipe(s.id);
+    if (!r) continue;
+    const factor = s.serv / 4;
+    for (const [name, q, u] of r.n) {
+      const key = norm(name) + '|' + (q === 0 ? 'qb' : u);
+      if (!map.has(key)) map.set(key, { key, name, u: q === 0 ? 'qb' : u, tot: 0, qb: q === 0, src: new Set() });
+      const item = map.get(key);
+      item.tot += q * factor;
+      item.src.add(r.t);
+    }
+  }
+  return [...map.values()].sort((a, b) => a.name.localeCompare(b.name, 'it'));
+}
+function pruneChecked() {
+  const valid = new Set(shoppingItems().map(i => i.key));
+  for (const k of Object.keys(state.checked)) if (!valid.has(k)) delete state.checked[k];
+}
+
+// ============ Render ============
+function render() {
+  // nav
+  document.getElementById('navRicette').classList.toggle('on', section === 'ricette');
+  document.getElementById('navSpesa').classList.toggle('on', section === 'spesa');
+  document.getElementById('navCucina').classList.toggle('on', section === 'cucina');
+  document.getElementById('secRicette').style.display = section === 'ricette' ? '' : 'none';
+  document.getElementById('secSpesa').style.display = section === 'spesa' ? '' : 'none';
+  document.getElementById('secCucina').style.display = section === 'cucina' ? '' : 'none';
+  document.getElementById('searchwrap').style.display = section === 'ricette' ? '' : 'none';
+  document.getElementById('tagrow').style.display = section === 'ricette' ? '' : 'none';
+
+  const badge = document.getElementById('badge');
+  badge.style.display = state.sel.length ? '' : 'none';
+  badge.textContent = state.sel.length;
+
+  const titles = { ricette: 'Ricette', spesa: 'Lista della spesa', cucina: 'In cucina' };
+  document.getElementById('hTitle').textContent = titles[section];
+
+  if (section === 'ricette') renderRicette();
+  else if (section === 'spesa') renderSpesa();
+  else renderCucina();
+}
+
+function renderRicette() {
+  const all = allRecipes();
+  document.getElementById('hSub').textContent = all.length + ' ricette · ' + state.sel.length + ' selezionate';
+
+  // tags
+  const trow = document.getElementById('tagrow');
+  trow.innerHTML = '';
+  for (const t of TAGS) {
+    const b = document.createElement('button');
+    b.className = 'tagchip' + (activeTags.has(t) ? ' on' : '');
+    b.textContent = t;
+    b.addEventListener('click', () => {
+      activeTags.has(t) ? activeTags.delete(t) : activeTags.add(t);
+      render();
+    });
+    trow.appendChild(b);
+  }
+
+  // filtro
+  const q = norm(query.trim());
+  const filtered = all.filter(r => {
+    for (const t of activeTags) if (!r.g.includes(t)) return false;
+    if (!q) return true;
+    if (norm(r.t).includes(q)) return true;
+    if (r.g.some(g => norm(g).includes(q))) return true;
+    return r.n.some(([name]) => norm(name).includes(q));
+  });
+
+  const list = document.getElementById('rlist');
+  list.innerHTML = '';
+  if (!filtered.length) {
+    list.innerHTML = '<div class="nores">Nessuna ricetta trovata.<br>Prova con altre parole o togli qualche tag.</div>';
+    return;
+  }
+  for (const r of filtered) {
+    const card = document.createElement('div');
+    card.className = 'rcard';
+    const mine = r.i.startsWith('c');
+    card.innerHTML = `<span class="remo">${emojiFor(r)}</span>
+      <div class="rmid">
+        <div class="rtitle">${escapeHtml(r.t)}${mine ? '<span class="rowner">mia</span>' : ''}</div>
+        <div class="rtags">${r.g.join(' · ')}</div>
+      </div>`;
+    if (mine) {
+      const del = document.createElement('button');
+      del.className = 'delmine'; del.textContent = '🗑'; del.setAttribute('aria-label', 'Elimina ricetta');
+      del.addEventListener('click', (ev) => {
+        ev.stopPropagation();
+        if (confirm('Eliminare la ricetta "' + r.t + '"?')) {
+          state.custom = state.custom.filter(x => x.i !== r.i);
+          state.sel = state.sel.filter(s => s.id !== r.i);
+          pruneChecked(); save(); render();
+        }
+      });
+      card.appendChild(del);
+    }
+    const sel = document.createElement('button');
+    sel.className = 'selbtn' + (isSelected(r.i) ? ' on' : '');
+    sel.textContent = '✓';
+    sel.setAttribute('aria-label', 'Seleziona');
+    sel.addEventListener('click', () => toggleSelect(r.i));
+    card.appendChild(sel);
+    list.appendChild(card);
+  }
+}
+
+function renderSpesa() {
+  const items = shoppingItems();
+  const body = document.getElementById('spesaBody');
+  document.getElementById('hSub').textContent = state.sel.length
+    ? 'Ingredienti per ' + state.sel.length + (state.sel.length === 1 ? ' ricetta' : ' ricette')
+    : '';
+  body.innerHTML = '';
+
+  if (!items.length) {
+    body.innerHTML = '<div class="cempty">La lista è vuota.<br>Seleziona qualche ricetta nella sezione 📖 Ricette e gli ingredienti compariranno qui, già sommati tra loro.</div>';
+    return;
+  }
+
+  const todo = items.filter(i => !state.checked[i.key]);
+  const done = items.filter(i => state.checked[i.key]);
+
+  const makeItem = (i) => {
+    const row = document.createElement('div');
+    row.className = 'sitem' + (state.checked[i.key] ? ' done' : '');
+    const tick = document.createElement('button');
+    tick.className = 'tick' + (state.checked[i.key] ? ' on' : '');
+    tick.textContent = '✓';
+    tick.setAttribute('aria-label', 'Spunta');
+    tick.addEventListener('click', () => {
+      state.checked[i.key] = !state.checked[i.key];
+      if (!state.checked[i.key]) delete state.checked[i.key];
+      save(); render();
+    });
+    const mid = document.createElement('div');
+    mid.className = 'smid';
+    const srcs = [...i.src];
+    const srcTxt = srcs.length > 2 ? srcs.slice(0, 2).join(', ') + ' +' + (srcs.length - 2) : srcs.join(', ');
+    mid.innerHTML = `<div class="sname">${escapeHtml(i.name.charAt(0).toUpperCase() + i.name.slice(1))}</div>
+      <div class="ssrc">${escapeHtml(srcTxt)}</div>`;
+    const qty = document.createElement('span');
+    qty.className = 'sqty tnum';
+    qty.textContent = i.qb ? 'q.b.' : fmtQty(i.tot, i.u, 1);
+    row.append(tick, mid, qty);
+    return row;
+  };
+
+  if (todo.length) {
+    const head = document.createElement('div');
+    head.className = 'shead';
+    head.textContent = 'Da comprare (' + todo.length + ')';
+    body.appendChild(head);
+    const card = document.createElement('div');
+    card.className = 'scard';
+    for (const i of todo) card.appendChild(makeItem(i));
+    body.appendChild(card);
+  }
+  if (done.length) {
+    const head = document.createElement('div');
+    head.className = 'shead';
+    head.textContent = 'Presi (' + done.length + ')';
+    body.appendChild(head);
+    const card = document.createElement('div');
+    card.className = 'scard';
+    for (const i of done) card.appendChild(makeItem(i));
+    body.appendChild(card);
+  }
+  const clear = document.createElement('div');
+  clear.className = 'clearrow';
+  const cb = document.createElement('button');
+  cb.textContent = 'Togli tutte le spunte';
+  cb.addEventListener('click', () => { state.checked = {}; save(); render(); });
+  clear.appendChild(cb);
+  body.appendChild(clear);
+}
+
+function renderCucina() {
+  const body = document.getElementById('cucinaBody');
+  document.getElementById('hSub').textContent = state.sel.length
+    ? state.sel.length + (state.sel.length === 1 ? ' ricetta selezionata' : ' ricette selezionate')
+    : '';
+  body.innerHTML = '';
+
+  if (!state.sel.length) {
+    body.innerHTML = '<div class="cempty">Nessuna ricetta selezionata.<br>Scegli cosa cucinare nella sezione 📖 Ricette: qui troverai le preparazioni complete, una sotto l\'altra.</div>';
+    return;
+  }
+
+  for (const s of state.sel) {
+    const r = getRecipe(s.id);
+    if (!r) continue;
+    const factor = s.serv / 4;
+    const card = document.createElement('div');
+    card.className = 'ccard' + (collapsed.has(r.i) ? ' closed' : '');
+
+    const head = document.createElement('button');
+    head.className = 'chead';
+    head.innerHTML = `<span class="cemo">${emojiFor(r)}</span><span class="ctitle">${escapeHtml(r.t)}</span><span class="carrow">▼</span>`;
+    head.addEventListener('click', () => {
+      collapsed.has(r.i) ? collapsed.delete(r.i) : collapsed.add(r.i);
+      render();
+    });
+    card.appendChild(head);
+
+    const cbody = document.createElement('div');
+    cbody.className = 'cbody';
+
+    // porzioni
+    const servrow = document.createElement('div');
+    servrow.className = 'servrow';
+    servrow.innerHTML = '<span class="slab">Porzioni</span>';
+    const stepper = document.createElement('div');
+    stepper.className = 'stepper';
+    const minus = document.createElement('button'); minus.textContent = '−';
+    minus.addEventListener('click', () => changeServ(r.i, -1));
+    const val = document.createElement('span'); val.textContent = s.serv;
+    const plus = document.createElement('button'); plus.textContent = '+';
+    plus.addEventListener('click', () => changeServ(r.i, 1));
+    stepper.append(minus, val, plus);
+    servrow.appendChild(stepper);
+    cbody.appendChild(servrow);
+
+    // ingredienti
+    const ing = document.createElement('ul');
+    ing.className = 'cing';
+    for (const [name, q, u] of r.n) {
+      const li = document.createElement('li');
+      li.innerHTML = `<span>${escapeHtml(name.charAt(0).toUpperCase() + name.slice(1))}</span><b class="tnum">${fmtQty(q, u, factor)}</b>`;
+      ing.appendChild(li);
+    }
+    cbody.appendChild(ing);
+
+    // passaggi
+    const steps = document.createElement('ol');
+    steps.className = 'csteps';
+    for (const st of r.s) {
+      const li = document.createElement('li');
+      li.textContent = st;
+      steps.appendChild(li);
+    }
+    cbody.appendChild(steps);
+
+    const rm = document.createElement('button');
+    rm.className = 'cremove';
+    rm.textContent = 'Rimuovi dalla selezione';
+    rm.addEventListener('click', () => toggleSelect(r.i));
+    cbody.appendChild(rm);
+
+    card.appendChild(cbody);
+    body.appendChild(card);
+  }
+}
+
+// ============ Nuova ricetta ============
+const addOverlay = document.getElementById('addOverlay');
+let fTagSel = new Set();
+
+function ingRow(name, qty, unit) {
+  const row = document.createElement('div');
+  row.className = 'ingrow';
+  const n = document.createElement('input');
+  n.type = 'text'; n.placeholder = 'Ingrediente'; n.value = name || '';
+  const q = document.createElement('input');
+  q.type = 'text'; q.inputMode = 'decimal'; q.placeholder = 'Qtà'; q.value = qty || '';
+  const u = document.createElement('select');
+  for (const un of UNITS) {
+    const o = document.createElement('option');
+    o.value = un; o.textContent = un;
+    if (un === (unit || 'g')) o.selected = true;
+    u.appendChild(o);
+  }
+  const rmv = document.createElement('button');
+  rmv.className = 'rmv'; rmv.textContent = '×'; rmv.setAttribute('aria-label', 'Rimuovi riga');
+  rmv.addEventListener('click', () => row.remove());
+  row.append(n, q, u, rmv);
+  return row;
+}
+
+function openAddSheet() {
+  document.getElementById('fTitle').value = '';
+  document.getElementById('fSteps').value = '';
+  fTagSel = new Set();
+  const ft = document.getElementById('fTags');
+  ft.innerHTML = '';
+  for (const t of TAGS) {
+    const b = document.createElement('button');
+    b.className = 'tagchip';
+    b.textContent = t;
+    b.addEventListener('click', () => {
+      fTagSel.has(t) ? fTagSel.delete(t) : fTagSel.add(t);
+      b.classList.toggle('on', fTagSel.has(t));
+    });
+    ft.appendChild(b);
+  }
+  const fi = document.getElementById('fIngs');
+  fi.innerHTML = '';
+  for (let k = 0; k < 3; k++) fi.appendChild(ingRow());
+  addOverlay.classList.add('open');
+}
+document.getElementById('openAdd').addEventListener('click', openAddSheet);
+document.getElementById('fAddIng').addEventListener('click', () => document.getElementById('fIngs').appendChild(ingRow()));
+document.getElementById('fCancel').addEventListener('click', () => addOverlay.classList.remove('open'));
+
+document.getElementById('fSave').addEventListener('click', () => {
+  const title = document.getElementById('fTitle').value.trim();
+  if (!title) { alert('Manca il titolo.'); return; }
+  const ings = [];
+  for (const row of document.getElementById('fIngs').children) {
+    const [n, q, u] = row.querySelectorAll('input, select');
+    const name = n.value.trim();
+    if (!name) continue;
+    const unit = u.value;
+    let qty = parseFloat(q.value.trim().replace(',', '.'));
+    if (unit === 'qb' || isNaN(qty)) qty = 0;
+    ings.push([name, qty, qty === 0 ? 'qb' : unit]);
+  }
+  if (!ings.length) { alert('Serve almeno un ingrediente.'); return; }
+  const steps = document.getElementById('fSteps').value.split('\n').map(s => s.trim()).filter(Boolean);
+  if (!steps.length) { alert('Scrivi almeno un passaggio di preparazione.'); return; }
+  const tags = fTagSel.size ? [...fTagSel] : ['salato'];
+  state.custom.push({ i: 'c' + Date.now().toString(36), t: title, g: tags, n: ings, s: steps });
+  save();
+  addOverlay.classList.remove('open');
+  toast('Ricetta salvata');
+  render();
+});
+
+// ============ Navigazione e ricerca ============
+document.getElementById('navRicette').addEventListener('click', () => { section = 'ricette'; render(); window.scrollTo(0, 0); });
+document.getElementById('navSpesa').addEventListener('click', () => { section = 'spesa'; render(); window.scrollTo(0, 0); });
+document.getElementById('navCucina').addEventListener('click', () => { section = 'cucina'; render(); window.scrollTo(0, 0); });
+document.getElementById('search').addEventListener('input', (e) => { query = e.target.value; render(); });
+
+// ============ Avvio ============
+load();
+render();
+if (!storageOk) setTimeout(() => toast('Anteprima senza salvataggio: funzionerà dal tuo indirizzo online'), 500);
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('ricette-sw.js').catch(() => {});
+</script>
+</body>
+</html>
